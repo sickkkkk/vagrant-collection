@@ -1,0 +1,44 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+config.ssh.insert_key = false
+
+  #  Jenkins Master Node
+  config.vm.define "jenkins-master" do |master|
+    master.vm.hostname = "jenkins-master"
+    master.vm.box = "centos/7"
+    master.vm.box_check_update  = false
+    master.vm.box_version = "2004.01"
+    master.vm.network "private_network", ip: "172.18.50.50"
+    
+    master.vm.provider :virtualbox do |v|
+      v.name    = "jenkins-master"
+      v.memory  = 2048
+      v.cpus    =  2
+    end
+  
+  master.vm.provision "shell", path: "bootstrap-jenkins-node.sh"
+  
+  end
+
+  #  Jenkins Worker Node
+  config.vm.define "jenkins-worker" do |worker|
+    worker.vm.hostname = "jenkins-worker"
+    worker.vm.box = "centos/7"
+    worker.vm.box_check_update  = false
+    worker.vm.box_version = "2004.01"
+    worker.vm.network "private_network", ip: "172.18.50.55"
+    
+    worker.vm.provider :virtualbox do |v|
+      v.name    = "jenkins-worker"
+      v.memory  = 2048
+      v.cpus    =  2
+    end
+  
+  worker.vm.provision "shell", path: "bootstrap-jenkins-node.sh"
+  
+  end
+
+end

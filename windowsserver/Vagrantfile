@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+  # win test box
+  config.vm.define "winsrv" do |srv|
+  
+    srv.vm.box               = "gusztavvargadr/windows-server-standard"
+    srv.vm.box_check_update  = false
+    srv.vm.box_version       = "1809.0.2109"
+    srv.vm.hostname          = "winsrv"
+
+    srv.vm.network "private_network", ip: "172.20.50.5"
+
+    srv.vm.provider :virtualbox do |v|
+      v.name    = "winsrv"
+      v.memory  = 4096
+      v.cpus    =  2
+    end
+  
+    srv.vm.provider :libvirt do |v|
+      v.memory  = 4096
+      v.nested  = true
+      v.cpus    = 2
+    end
+  
+  end
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize ["modifyvm", :"id", "--usb", "on"]
+   vb.customize ["modifyvm", :id, "--usbehci", "on"]
+  end
+
+  # Implement determined configuration attributes
+  config.vm.provider "virtualbox" do |vb|
+   vb.customize ["usbfilter", "add", "1",
+        "--target", :id,
+        "--name", "USB Flash Drive",
+        "--product", "Flash Drive"]
+  end
+
+end

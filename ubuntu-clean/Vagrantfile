@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+config.ssh.insert_key = false
+
+  #  host server 1
+  config.vm.define "ubuntu-host" do |app|
+    app.vm.hostname = "ubuntu-host"
+    app.vm.box = "generic/ubuntu2004"
+    app.vm.box_check_update  = false
+    app.vm.box_version = "3.3.0"
+    app.vm.network "private_network", ip: "172.18.50.50"
+    
+    app.vm.provider :virtualbox do |v|
+      v.name    = "ubuntu-host"
+      v.memory  = 8192
+      v.cpus    =  4
+    end
+  
+  app.vm.provision "shell", path: "bootstrap-ubuntu.sh"
+  
+  end
+
+end

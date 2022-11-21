@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+config.ssh.insert_key = false
+
+  #  host server 1
+  config.vm.define "jenkins-host" do |app|
+    app.vm.hostname = "jenkins-host"
+    app.vm.box = "generic/ubuntu2004"
+    app.vm.box_check_update  = false
+    app.vm.box_version = "3.3.0"
+    app.vm.network "private_network", ip: "172.18.50.50"
+    
+    app.vm.provider :virtualbox do |v|
+      v.name    = "host01"
+      v.memory  = 2048
+      v.cpus    =  2
+    end
+  
+  app.vm.provision "shell", path: "bootstrap-jenkins-host.sh"
+  
+  end
+
+end
