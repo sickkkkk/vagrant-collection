@@ -15,8 +15,8 @@ config.ssh.insert_key = false
     
     app.vm.provider :virtualbox do |v|
       v.name    = "gitlab-master"
-      v.memory  = 8192
-      v.cpus    =  4
+      v.memory  = 2048
+      v.cpus    =  2
     end
   
   app.vm.provision "shell", path: "bootstrap-gitlab-master.sh"
