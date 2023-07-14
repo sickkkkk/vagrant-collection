@@ -6,9 +6,9 @@ Vagrant.configure(2) do |config|
   # win test box
   config.vm.define "winsrv" do |srv|
   
-    srv.vm.box               = "gusztavvargadr/windows-server-standard"
+    srv.vm.box               = "gusztavvargadr/windows-server-2022-standard"
     srv.vm.box_check_update  = false
-    srv.vm.box_version       = "1809.0.2109"
+    srv.vm.box_version       = "2102.0.2306"
     srv.vm.hostname          = "winsrv"
 
     srv.vm.network "private_network", ip: "172.20.50.5"
