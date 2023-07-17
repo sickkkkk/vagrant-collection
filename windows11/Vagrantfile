@@ -4,17 +4,17 @@
 Vagrant.configure(2) do |config|
 
   # win test box
-  config.vm.define "winsrv" do |srv|
+  config.vm.define "win-11" do |srv|
   
-    srv.vm.box               = "gusztavvargadr/windows-server-2022-standard"
+    srv.vm.box               = "gusztavvargadr/windows-11-22h2-enterprise"
     srv.vm.box_check_update  = false
     srv.vm.box_version       = "2202.0.2306"
-    srv.vm.hostname          = "winsrv"
+    srv.vm.hostname          = "win-11"
 
     srv.vm.network "private_network", ip: "172.20.50.5"
 
     srv.vm.provider :virtualbox do |v|
-      v.name    = "winsrv"
+      v.name    = "win-11"
       v.memory  = 4096
       v.cpus    =  2
     end
