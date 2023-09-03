@@ -87,3 +87,14 @@ echo 'alias k=kubectl' >> ~/.bashrc
 echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
 source ~/.bashrc 
 export KUBECONFIG=/etc/kubernetes/admin.conf >> ~/.bashrc
+
+#alias nerdctl_stopall="nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d ' ' -f 1 | xargs -n1 -i sh -c 'nerdctl -n k8s.io stop {} || true'"
+#alias nerdctl_rmall="nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d ' ' -f 1 | xargs -n1 -i sh -c 'nerdctl -n k8s.io rm {} || true'"
+# etcd
+#ETCDCTL_API=3 etcdctl --endpoints https://10.0.2.15:2379 \
+#--cacert /etc/kubernetes/pki/etcd/ca.crt \
+#--cert /etc/kubernetes/pki/etcd/server.crt \
+#--key /etc/kubernetes/pki/etcd/server.key \
+#--write-out=table \
+#--endpoints=$ENDPOINTS endpoint status
+#ETCDCTL_API=3 etcdctl --endpoints https://10.0.2.15:2379 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key get / --prefix --keys-only | grep -v ^$
