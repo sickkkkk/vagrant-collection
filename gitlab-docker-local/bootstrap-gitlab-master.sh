@@ -31,4 +31,4 @@ while ! nc -z localhost 80; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
 echo "Gitlab Started"
-sudo docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password >> /home/vagrant/admintoken
+sudo docker exec gitlab grep 'Password:' /etc/gitlab/initial_root_password >> /home/vagrant/admintoken
