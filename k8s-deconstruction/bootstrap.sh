@@ -1,7 +1,5 @@
 #/!/bin/bash
-# install kubernetes with kubeadm
-# network settings
-# not covered in tutorail dues to ec2 vm origin maybe?
+set -x
 echo "[TASK 1] Disable and turn off SWAP"
 sed -i '/swap/d' /etc/fstab
 swapoff -a
@@ -25,7 +23,6 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
-
 echo "[TASK 4] Install containerd and nerdctl for container runtime control"
 #sudo bash 
 cd /tmp
@@ -39,7 +36,7 @@ containerd config default | sudo tee /etc/containerd/config.toml
 # replace cgroup driver with runc
 sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
 # fix sandpox image
-sed -i 's/sandbox_image = "registry.k8s.io\/pause:3.2"/sandbox_image = "registry.k8s.io\/pause:3.9"/' /etc/containerd/config.toml
+sed -i 's/sandbox_image \= "registry.k8s.io\/pause:3.8"/sandbox_image \= "registry.k8s.io\/pause:3.9"/g' /etc/containerd/config.toml
 systemctl restart containerd
 
 wget https://github.com/containerd/nerdctl/releases/download/v1.5.0/nerdctl-1.5.0-linux-amd64.tar.gz
@@ -84,4 +81,9 @@ sudo apt-mark hold kubelet kubeadm kubectl
 
 kubeadm init --pod-network-cidr=10.10.20.0/24
 
-export KUBECONFIG=/etc/kubernetes/admin.conf
+echo "[TASK 6] Install qol tips for kubeadm"
+kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
+echo 'alias k=kubectl' >> ~/.bashrc 
+echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
+source ~/.bashrc 
+export KUBECONFIG=/etc/kubernetes/admin.conf >> ~/.bashrc
