@@ -1,5 +1,4 @@
 #/!/bin/bash
-set -x
 # install kubernetes with kubeadm
 # network settings
 # not covered in tutorail dues to ec2 vm origin maybe?
@@ -13,9 +12,10 @@ systemctl disable --now ufw
 
 echo "[TASK 3] Add network specific kernel settings"
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
 br_netfilter
 EOF
-
+modprobe overlay
 modprobe br_netfilter
 
 cat >>/etc/sysctl.d/k8s.conf<<EOF
@@ -25,6 +25,7 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
+
 echo "[TASK 4] Install containerd and nerdctl for container runtime control"
 #sudo bash 
 cd /tmp
@@ -32,6 +33,15 @@ apt update -y
 apt install containerd -y
 systemctl enable containerd
 systemctl start containerd
+# initialise default config for containerd
+mkdir -p /etc/containerd/
+containerd config default | sudo tee /etc/containerd/config.toml
+# replace cgroup driver with runc
+sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+# fix sandpox image
+sed -i 's/sandbox_image = "registry.k8s.io\/pause:3.2"/sandbox_image = "registry.k8s.io\/pause:3.9"/' /etc/containerd/config.toml
+systemctl restart containerd
+
 wget https://github.com/containerd/nerdctl/releases/download/v1.5.0/nerdctl-1.5.0-linux-amd64.tar.gz
 tar zxvf nerdctl-1.5.0-linux-amd64.tar.gz 
 mv nerdctl /usr/local/bin/
@@ -54,11 +64,10 @@ cat >>/etc/cni/net.d/10-bridge.conf<<EOF
     "hairpinMode": true,
     "ipam": {
         "type": "host-local",
-        "subnet": "10.10.0.0/16"
+        "subnet": "10.10.20.0/24"
     }
 }
 EOF
-
 
 echo "[TASK 5] Install kubeadm from deb"
 sudo apt-get update
@@ -67,12 +76,12 @@ sudo apt-get install -y apt-transport-https ca-certificates curl
 
 sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 
-kubeadm init --pod-network-cidr=10.10.0.0/16
+kubeadm init --pod-network-cidr=10.10.20.0/24
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
