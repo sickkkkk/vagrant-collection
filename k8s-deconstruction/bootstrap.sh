@@ -87,7 +87,7 @@ echo "[TASK 6] Install qol tips for kubeadm"
 kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
 echo 'alias k=kubectl' >> ~/.bashrc 
 echo 'complete -o default -F __start_kubectl k' >> ~/.bashrc
-export KUBECONFIG=/etc/kubernetes/admin.conf >> ~/.bashrc
+echo 'KUBECONFIG=/etc/kubernetes/admin.conf' >> ~/.bashrc
 source ~/.bashrc 
 
 
