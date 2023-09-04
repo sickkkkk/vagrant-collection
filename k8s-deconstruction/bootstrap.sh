@@ -1,5 +1,7 @@
 #/!/bin/bash
 set -x
+export POD_CIDR="10.10.20.0/24"
+
 echo "[TASK 1] Disable and turn off SWAP"
 sed -i '/swap/d' /etc/fstab
 swapoff -a
@@ -61,7 +63,7 @@ cat >>/etc/cni/net.d/10-bridge.conf<<EOF
     "hairpinMode": true,
     "ipam": {
         "type": "host-local",
-        "subnet": "10.10.20.0/24"
+        "subnet": "$POD_CIDR"
     }
 }
 EOF
@@ -79,14 +81,15 @@ sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 
-kubeadm init --pod-network-cidr=10.10.20.0/24
+kubeadm init --pod-network-cidr=$POD_CIDR
 
 echo "[TASK 6] Install qol tips for kubeadm"
 kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
 echo 'alias k=kubectl' >> ~/.bashrc 
-echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
-source ~/.bashrc 
+echo 'complete -o default -F __start_kubectl k' >> ~/.bashrc
 export KUBECONFIG=/etc/kubernetes/admin.conf >> ~/.bashrc
+source ~/.bashrc 
+
 
 #alias nerdctl_stopall="nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d ' ' -f 1 | xargs -n1 -i sh -c 'nerdctl -n k8s.io stop {} || true'"
 #alias nerdctl_rmall="nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d ' ' -f 1 | xargs -n1 -i sh -c 'nerdctl -n k8s.io rm {} || true'"
