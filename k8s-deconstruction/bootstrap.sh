@@ -87,8 +87,6 @@ echo "[TASK 6] Install qol tips for kubeadm"
 kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
 echo 'alias k=kubectl' >> ~/.bashrc 
 echo 'complete -o default -F __start_kubectl k' >> ~/.bashrc
-echo 'KUBECONFIG=/etc/kubernetes/admin.conf' >> ~/.bashrc
+echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> ~/.bashrc
 echo "alias nerdctl_stopall='nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d \" \" -f 1 | xargs -I {} sh -c \"nerdctl -n k8s.io stop {} || true\"'" >> ~/.bashrc
 echo "alias nerdctl_rmall='nerdctl -n k8s.io ps -a | grep -v CONTAINER | cut -d \" \" -f 1 | xargs -I {} sh -c \"nerdctl -n k8s.io rm {} || true\"'" >> ~/.bashrc
-
-
