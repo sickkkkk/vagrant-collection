@@ -1,6 +1,4 @@
 echo "[TASK 1] Update DEPs"
-apt-get update -y && apt-get install
-
 # Add Docker's official GPG key:
 sudo apt-get update -y
 sudo apt-get install ca-certificates curl gnupg -y
@@ -23,5 +21,3 @@ sudo groupadd docker
 
 sudo usermod -aG docker $USER
 sudo usermod -aG docker vagrant
-
-sudo apt-get install nginx -y

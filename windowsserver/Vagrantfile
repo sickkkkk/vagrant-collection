@@ -8,36 +8,17 @@ Vagrant.configure(2) do |config|
   
     srv.vm.box               = "gusztavvargadr/windows-server-2022-standard"
     srv.vm.box_check_update  = false
-    srv.vm.box_version       = "2202.0.2306"
+    srv.vm.box_version       = "2102.0.2310"
     srv.vm.hostname          = "winsrv"
 
-    srv.vm.network "private_network", ip: "172.20.50.5"
+    srv.vm.network "private_network", virtualbox__intnet: "intnet", auto_config: false
 
     srv.vm.provider :virtualbox do |v|
       v.name    = "winsrv"
-      v.memory  = 4096
-      v.cpus    =  2
+      v.memory  = 8192
+      v.cpus    =  4
     end
-  
-    srv.vm.provider :libvirt do |v|
-      v.memory  = 4096
-      v.nested  = true
-      v.cpus    = 2
-    end
-  
-  end
-
-  config.vm.provider "virtualbox" do |vb|
-    vb.customize ["modifyvm", :"id", "--usb", "on"]
-   vb.customize ["modifyvm", :id, "--usbehci", "on"]
-  end
-
-  # Implement determined configuration attributes
-  config.vm.provider "virtualbox" do |vb|
-   vb.customize ["usbfilter", "add", "1",
-        "--target", :id,
-        "--name", "USB Flash Drive",
-        "--product", "Flash Drive"]
+    
   end
 
 end

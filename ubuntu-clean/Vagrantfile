@@ -6,17 +6,17 @@ Vagrant.configure(2) do |config|
 config.ssh.insert_key = false
 
   #  host server 1
-  config.vm.define "dkr-host-u22" do |app|
-    app.vm.hostname = "dkr-host-u22"
+  config.vm.define "ubuntu22" do |app|
+    app.vm.hostname = "ubuntu22"
     app.vm.box = "generic/ubuntu2204"
     app.vm.box_check_update  = false
     app.vm.box_version = "4.2.16"
     app.vm.network "private_network", ip: "172.18.50.50"
     
     app.vm.provider :virtualbox do |v|
-      v.name    = "dkr-host-u22"
-      v.memory  = 4096
-      v.cpus    =  2
+      v.name    = "ubuntu22"
+      v.memory  = 8192
+      v.cpus    =  4
     end
   
   app.vm.provision "shell", path: "bootstrap-ubuntu.sh"

@@ -75,6 +75,8 @@ bootstrap:
   initdb:
     - encoding: UTF8
     - data-checksums
+    - auth-host: md5
+    - locale: ru_RU.UTF-8
   pg_hba:
     - host replication replicator   127.0.0.1/32 md5
     - host replication replicator   172.18.50.0/24   md5

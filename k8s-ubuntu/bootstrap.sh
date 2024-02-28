@@ -64,5 +64,4 @@ echo "[TASK 9] Update /etc/hosts file"
 cat >>/etc/hosts<<EOF
 172.16.55.50   kmaster.int.ohmylab.io     kmaster
 172.16.55.61   kworker01.int.ohmylab.io    kworker01
-172.16.55.62   kworker02.int.ohmylab.io    kworker02
 EOF
