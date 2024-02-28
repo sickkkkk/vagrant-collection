@@ -1,0 +1,53 @@
+BOX_IMAGE = "ubuntu/jammy64"
+WINDOWS_BOX_IMAGE = "gusztavvargadr/windows-server-2022-standard" 
+
+PG_SCRIPT = "bootstrap/bootstrap_pg.sh"
+ETCD_SCRIPT = "bootstrap/bootstrap_etcd.sh"
+HAPROXY_SCRIPT = "bootstrap/bootstrap_haproxy.sh"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = BOX_IMAGE
+
+  config.vm.define "etcd" do |etcd|
+    etcd.vm.hostname = "etcd"
+    etcd.vm.network "private_network", ip: "172.18.50.55" 
+    etcd.vm.provision "shell", path: ETCD_SCRIPT
+    etcd.vm.provider "virtualbox" do |v|
+      v.memory = 1024
+      v.cpus = 1
+    end
+  end
+
+  (1..2).each do |i|
+    config.vm.define "pg#{i}" do |pg|
+      pg.vm.hostname = "pg#{i}"
+      pg.vm.network "private_network", ip: "172.18.50.15#{i}"
+      pg.vm.provision "shell", path: PG_SCRIPT
+      pg.vm.provider "virtualbox" do |v|
+        v.memory = 2048
+        v.cpus = 2
+      end
+    end
+  end
+  
+  config.vm.define "haproxy" do |haproxy|
+    haproxy.vm.hostname = "haproxy"
+    haproxy.vm.network "private_network", ip: "172.18.50.60"
+    haproxy.vm.provision "shell", path: HAPROXY_SCRIPT
+    haproxy.vm.provider "virtualbox" do |v|
+      v.memory = 1024
+      v.cpus = 1
+    end
+  end
+
+
+  config.vm.define "winserver" do |winserver|
+    winserver.vm.box = WINDOWS_BOX_IMAGE
+    winserver.vm.hostname = "winserver"
+    winserver.vm.network "private_network", ip: "172.18.50.70"
+    winserver.vm.provider "virtualbox" do |v|
+      v.memory = 4096
+      v.cpus = 2
+    end
+  end
+end
