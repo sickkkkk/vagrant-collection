@@ -24,6 +24,11 @@ systemctl disable postgrespro-1c-15
 echo -e "admin\nadmin" | passwd root 
 echo "export TERM=xterm" >> /etc/bash.bashrc
 
+#set ru_RU locale:
+locale-gen ru_RU
+locale-gen ru_RU.UTF-8
+update-locale
+
 cat >>/etc/hosts<<EOF
 172.18.50.151   pg1.int.ohmylab.io     pg1
 172.18.50.152   pg2.int.ohmylab.io     pg2
@@ -76,7 +81,7 @@ bootstrap:
     - encoding: UTF8
     - data-checksums
     - auth-host: md5
-    - locale: ru_RU.UTF-8
+    - locale: ru_RU.utf8
   pg_hba:
     - host replication replicator   127.0.0.1/32 md5
     - host replication replicator   172.18.50.0/24   md5
