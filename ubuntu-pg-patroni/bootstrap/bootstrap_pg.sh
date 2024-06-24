@@ -1,25 +1,33 @@
 #!/bin/bash
 set -x
-
-systemctl disable --now ufw 
-LOCAL_IP=$(ip addr show | grep -oP 'inet \K172\.[\d.]+')
+PG_MAJOR_VERSION="15"
+systemctl disable --now ufw
+# local hosts file
+cat >>/etc/hosts<<EOF
+172.18.50.151   pg1.int.ohmylab.io     pg1
+172.18.50.152   pg2.int.ohmylab.io     pg2
+172.18.50.55    etcd.int.ohmylab.io    etcd
+172.18.50.60    haproxy.int.ohmylab.io  haproxy
+EOF
+LOCAL_IP=$(ip addr show | grep -oP 'inet \K172\.18\.50\.\d+')
 echo 
-#ETCD_IP=$(nslookup etcd | awk '/^Address: / { print $2 }' | tail -n1)
 ETCD_IP="172.18.50.55"
 SHORT_HOSTNAME=$(nslookup $LOCAL_IP | awk '/name =/ { print $4 }' | head -n1 | awk -F. '{print $1}')
-# add pgpro repo
-wget -q -O /tmp/repo-add.sh https://repo.postgrespro.ru/1c-15/keys/pgpro-repo-add.sh
-chmod +x /tmp/repo-add.sh
-bash -c "/tmp/repo-add.sh"
+echo "Hostname is $HOSTNAME"
+apt install curl ca-certificates -y
+install -d /usr/share/postgresql-common/pgdg
+curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 apt-get update -y
-# install pg1c
-apt-get install postgrespro-1c-15 bzip2 tar build-essential \
+# install pg
+apt-get install postgresql-$PG_MAJOR_VERSION bzip2 tar build-essential \
     dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev -y
+ln -s /usr/lib
 systemctl daemon-reload
-systemctl start postgrespro-1c-15
-systemctl stop postgrespro-1c-15
-systemctl status postgrespro-1c-15
-systemctl disable postgrespro-1c-15
+systemctl start postgresql
+systemctl stop postgresql
+systemctl status postgresql
+systemctl disable postgresql
 
 echo -e "admin\nadmin" | passwd root 
 echo "export TERM=xterm" >> /etc/bash.bashrc
@@ -29,16 +37,9 @@ locale-gen ru_RU
 locale-gen ru_RU.UTF-8
 update-locale
 
-cat >>/etc/hosts<<EOF
-172.18.50.151   pg1.int.ohmylab.io     pg1
-172.18.50.152   pg2.int.ohmylab.io     pg2
-172.18.50.55    etcd.int.ohmylab.io    etcd
-172.18.50.60    haproxy.int.ohmylab.io  haproxy
-EOF
-
 pip3 install --upgrade pip
-pip install patroni[psycopg3,etcd3]
-
+pip install "patroni[psycopg3,etcd3]==3.2.2"
+ln -s /usr/lib/postgresql/$PG_MAJOR_VERSION/bin/* /usr/sbin/
 mkdir -p /data/patroni
 chown postgres:postgres -R /data
 chmod 700 /data/patroni/
@@ -69,6 +70,8 @@ restapi:
   connect_address: $LOCAL_IP:8008
 etcd:
   host: $ETCD_IP:2379
+  protocol: http
+  version: "v2"
 bootstrap:
   dcs:
     ttl: 30
