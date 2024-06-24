@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 PG_MAJOR_VERSION="15"
 systemctl disable --now ufw
 # local hosts file
@@ -22,7 +21,6 @@ apt-get update -y
 # install pg
 apt-get install postgresql-$PG_MAJOR_VERSION bzip2 tar build-essential \
     dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev -y
-ln -s /usr/lib
 systemctl daemon-reload
 systemctl start postgresql
 systemctl stop postgresql
