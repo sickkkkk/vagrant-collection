@@ -1,0 +1,6 @@
+[master_nodes]
+kmaster.cluster.local ansible_host=kmaster.cluster.local ansible_user=vagrant
+
+[worker_nodes]
+kworker01.cluster.local ansible_host=kworker01.cluster.local ansible_user=vagrant
+kworker02.cluster.local ansible_host=kworker02.cluster.local ansible_user=vagrant
