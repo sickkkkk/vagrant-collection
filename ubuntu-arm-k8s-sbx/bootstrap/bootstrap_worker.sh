@@ -22,5 +22,5 @@ echo $(cat /home/vagrant/vagrant-key/vagrant-bootstrap-key.pub) >> /home/vagrant
 chmod 600 /home/vagrant/.ssh/authorized_keys
 chown -R vagrant:vagrant /home/vagrant/.ssh
 
-echo 'eval $(ssh-agent -s)' >> /home/vagrant/.bashrc
-echo 'ssh-add /home/vagrant/vagrant-key/vagrant-bootstrap-key' >> /home/vagrant/.bashrc
+echo 'eval $(ssh-agent -s) > /dev/null' >> /home/vagrant/.bashrc
+echo 'ssh-add /home/vagrant/vagrant-key/vagrant-bootstrap-key > /dev/null 2>&1' >> /home/vagrant/.bashrc
