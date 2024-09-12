@@ -38,7 +38,7 @@
       - pods
 
 - name: Initialize the cluster
-  shell: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
+  shell: kubeadm init --apiserver-advertise-address string 172.18.50.55 --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
   args:
     chdir: /home/{{ kube_bootstrap_user }}
     creates: cluster_initialized.log
