@@ -1,4 +1,4 @@
 ---
 # tasks file for k8sprem
-- include_tasks: prepare_nodes
-- include_tasks: prepare_master
+- include_tasks: prepare_nodes.yml
+- include_tasks: prepare_master.yml

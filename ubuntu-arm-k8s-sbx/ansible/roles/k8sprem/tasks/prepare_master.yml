@@ -11,7 +11,7 @@
     state: touch
     mode: "0644"
 
-- name: Configure Kubernetes Cluster Configuration
+- name: Configure container runtime
   blockinfile:
     path: /etc/kubernetes/kubeadm-config.yaml
     block: |
@@ -19,11 +19,10 @@
       apiVersion: kubeadm.k8s.io/v1beta3
       networking:
         podSubnet: "{{ pod_cidr }}"
-
-- name: Configure Kubernetes Kubelet Runtime
-  blockinfile:
-    path: /etc/kubernetes/kubeadm-config.yaml
-    block: |
+      apiServer:
+        extraArgs:
+          advertiseAddress: "172.18.50.55"
+      ---
       kind: KubeletConfiguration
       apiVersion: kubelet.config.k8s.io/v1beta1
       runtimeRequestTimeout: "15m"
@@ -38,7 +37,8 @@
       - pods
 
 - name: Initialize the cluster
-  shell: kubeadm init --apiserver-advertise-address string 172.18.50.55 --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
+  become: yes
+  shell: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
   args:
     chdir: /home/{{ kube_bootstrap_user }}
     creates: cluster_initialized.log
