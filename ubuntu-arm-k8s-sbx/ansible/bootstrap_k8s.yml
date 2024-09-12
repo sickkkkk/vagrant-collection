@@ -3,13 +3,11 @@
   become: yes
   roles:
     - role: k8sprem
-      tasks_from: prepare_nodes.yml
 
 - hosts: master_nodes
   become: yes
   roles:
     - role: k8sprem
-      tasks_from: prepare_master.yml
 
 - name: Configure Join Commands on Master Node
   hosts: master_nodes
