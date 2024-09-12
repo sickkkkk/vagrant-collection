@@ -1,0 +1,67 @@
+---
+- name: Install Kubectl
+  apt:
+    name: kubectl=1.29.*
+    state: present
+    force: yes
+
+- name: Create an Empty file for Kubeadm configuring
+  file:
+    path: /etc/kubernetes/kubeadm-config.yaml
+    state: touch
+    mode: "0644"
+
+- name: Configure Kubernetes Cluster Configuration
+  blockinfile:
+    path: /etc/kubernetes/kubeadm-config.yaml
+    block: |
+      kind: ClusterConfiguration
+      apiVersion: kubeadm.k8s.io/v1beta3
+      networking:
+        podSubnet: "{{ pod_cidr }}"
+
+- name: Configure Kubernetes Kubelet Runtime
+  blockinfile:
+    path: /etc/kubernetes/kubeadm-config.yaml
+    block: |
+      kind: KubeletConfiguration
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      runtimeRequestTimeout: "15m"
+      cgroupDriver: "systemd"
+      systemReserved:
+        cpu: 100m
+        memory: 350M
+      kubeReserved:
+        cpu: 100m
+        memory: 50M
+      enforceNodeAllocatable:
+      - pods
+
+- name: Initialize the cluster
+  shell: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
+  args:
+    chdir: /home/{{ kube_bootstrap_user }}
+    creates: cluster_initialized.log
+
+- name: Create .kube directory
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: 0755
+
+- name: Copy admin.conf to User's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ kube_bootstrap_user }}/.kube/config
+    remote_src: yes
+    owner: "{{ kube_bootstrap_user }}"
+
+- name: Install Pod Network
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml >> pod_network_setup.log
+  args:
+    chdir: $HOME
+    creates: pod_network_setup.log

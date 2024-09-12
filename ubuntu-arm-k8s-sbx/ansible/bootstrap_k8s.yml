@@ -1,0 +1,12 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - role: k8sprem
+      tasks_from: prepare_nodes.yml
+
+- hosts: masters
+  become: yes
+  roles:
+    - role: k8sprem
+      tasks_from: prepare_master.yml

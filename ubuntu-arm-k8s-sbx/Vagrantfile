@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
       worker.vm.network "private_network", ip: "172.18.50.6#{i}"
       worker.vm.provision "shell", path: WORKER_BOOTSTRAP_SCRIPT
       worker.vm.provider "vmware_fusion" do |v|
-        v.memory = 1024
+        v.memory = 2048
         v.cpus = 2
       end
     end

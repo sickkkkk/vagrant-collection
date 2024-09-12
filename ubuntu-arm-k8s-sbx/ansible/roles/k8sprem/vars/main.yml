@@ -1,2 +1,4 @@
 ---
 # vars file for k8sprem
+kube_bootstrap_user: vagrant
+pod_cidr: "10.10.0.0/16"
