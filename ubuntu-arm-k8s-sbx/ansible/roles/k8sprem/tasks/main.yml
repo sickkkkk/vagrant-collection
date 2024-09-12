@@ -1,7 +1,6 @@
 ---
 # tasks file for k8sprem
+- include_tasks: prepare_nodes.yml
+
 - include_tasks: prepare_master.yml
   when: "'master_nodes' in group_names"
-
-- include_tasks: prepare_nodes.yml
-  when: "'worker_nodes' in group_names"

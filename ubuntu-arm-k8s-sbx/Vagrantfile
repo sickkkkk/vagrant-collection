@@ -6,20 +6,20 @@ ANSIBLE_MASTER_BOOTSTRAP_SCRIPT = "bootstrap/bootstrap_ansible.sh"
 Vagrant.configure("2") do |config|
   config.vm.box = BOX_IMAGE
 
-  config.vm.define "master" do |master|
-    master.vm.synced_folder ".", "/vagrant", disabled: true
-    master.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
-    master.vm.hostname = "master.cluster.local"
-    master.vm.network "private_network", ip: "172.18.50.55" 
-    master.vm.provision "shell", path: MASTER_BOOTSTRAP_SCRIPT
-    master.vm.provider "vmware_fusion" do |v|
+  config.vm.define "kmaster" do |kmaster|
+    #kmaster.vm.synced_folder ".", "/vagrant", disabled: true
+    kmaster.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
+    kmaster.vm.hostname = "kmaster.cluster.local"
+    kmaster.vm.network "private_network", ip: "172.18.50.55"
+    kmaster.vm.provision "shell", path: MASTER_BOOTSTRAP_SCRIPT
+    kmaster.vm.provider "vmware_fusion" do |v|
       v.memory = 2048
       v.cpus = 2
     end
   end
 
   config.vm.define "ansible-master" do |ansible_master|
-    ansible_master.vm.synced_folder ".", "/vagrant", disabled: true
+    #ansible_master.vm.synced_folder ".", "/vagrant", disabled: true
     ansible_master.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
     ansible_master.vm.hostname = "ansible-master.cluster.local"
     ansible_master.vm.network "private_network", ip: "172.18.50.50" 
@@ -32,10 +32,10 @@ Vagrant.configure("2") do |config|
 
   (1..2).each do |i|
     config.vm.define "worker0#{i}" do |worker|
-    worker.vm.synced_folder ".", "/vagrant", disabled: true
+    #worker.vm.synced_folder ".", "/vagrant", disabled: true
     worker.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
-      worker.vm.hostname = "worker0#{i}.cluster.local"
-      worker.vm.network "private_network", ip: "172.18.50.6#{i}"
+      worker.vm.hostname = "kworker0#{i}.cluster.local"
+      worker.vm.network "private_network", ip: "172.18.50.6#{i}"#, auto_config: false
       worker.vm.provision "shell", path: WORKER_BOOTSTRAP_SCRIPT
       worker.vm.provider "vmware_fusion" do |v|
         v.memory = 2048

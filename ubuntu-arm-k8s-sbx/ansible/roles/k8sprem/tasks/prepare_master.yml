@@ -1,7 +1,7 @@
 ---
 - name: Install Kubectl
   apt:
-    name: kubectl=1.29.*
+    name: kubectl
     state: present
     force: yes
 
@@ -22,6 +22,7 @@
       apiServer:
         extraArgs:
           advertiseAddress: "172.18.50.55"
+          bindAddress: "172.18.50.55"
       ---
       kind: KubeletConfiguration
       apiVersion: kubelet.config.k8s.io/v1beta1
@@ -36,9 +37,13 @@
       enforceNodeAllocatable:
       - pods
 
+- name: Bump cluster config to new API version
+  become: yes
+  shell: kubeadm config migrate --old-config /etc/kubernetes/kubeadm-config.yaml --new-config /etc/kubernetes/kubeadm-config-new.yaml
+
 - name: Initialize the cluster
   become: yes
-  shell: kubeadm init --config /etc/kubernetes/kubeadm-config.yaml >> cluster_initialized.log
+  shell: kubeadm init --config /etc/kubernetes/kubeadm-config-new.yaml >> cluster_initialized.log
   args:
     chdir: /home/{{ kube_bootstrap_user }}
     creates: cluster_initialized.log

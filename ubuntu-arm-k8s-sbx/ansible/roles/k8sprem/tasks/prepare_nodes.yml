@@ -3,8 +3,8 @@
   apt:
     update_cache: yes
 
-- name: Reboot
-  reboot:
+#- name: Reboot
+#  reboot:
 
 - name: Disable SWAP
   shell: |
@@ -67,20 +67,25 @@
 
 - name: Add Kubernetes apt-key
   get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+    url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
     dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
     mode: "0644"
     force: true
 
 - name: Add Kubernetes APT repository
   apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
     state: present
     update_cache: yes
 
 - name: Install containerd
   apt:
     name: containerd.io
+    state: present
+
+- name: Install socat
+  apt:
+    name: socat
     state: present
 
 - name: Create containerd directory
@@ -97,6 +102,12 @@
     regexp: "            SystemdCgroup = false"
     line: "            SystemdCgroup = true"
 
+- name: Configuring sandbox image
+  lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: 'sandbox_image = "registry.k8s.io/pause:3.8"'
+    line: 'sandbox_image = "registry.k8s.io/pause:3.10"'
+
 - name: Enable the containerd service and start service
   systemd:
     name: containerd
@@ -106,13 +117,13 @@
 
 - name: Install Kubelet
   apt:
-    name: kubelet=1.29.*
+    name: kubelet
     state: present
     update_cache: true
 
 - name: Install Kubeadm
   apt:
-    name: kubeadm=1.29.*
+    name: kubeadm
     state: present
 
 - name: Enable the Kubelet service
