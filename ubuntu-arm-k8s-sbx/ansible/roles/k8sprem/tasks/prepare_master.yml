@@ -1,49 +1,13 @@
 ---
 - name: Install Kubectl
   apt:
-    name: kubectl
+    name: kubectl=1.28.*
     state: present
     force: yes
 
-- name: Create an Empty file for Kubeadm configuring
-  file:
-    path: /etc/kubernetes/kubeadm-config.yaml
-    state: touch
-    mode: "0644"
-
-- name: Configure container runtime
-  blockinfile:
-    path: /etc/kubernetes/kubeadm-config.yaml
-    block: |
-      kind: ClusterConfiguration
-      apiVersion: kubeadm.k8s.io/v1beta3
-      networking:
-        podSubnet: "{{ pod_cidr }}"
-      apiServer:
-        extraArgs:
-          advertiseAddress: "172.18.50.55"
-          bindAddress: "172.18.50.55"
-      ---
-      kind: KubeletConfiguration
-      apiVersion: kubelet.config.k8s.io/v1beta1
-      runtimeRequestTimeout: "15m"
-      cgroupDriver: "systemd"
-      systemReserved:
-        cpu: 100m
-        memory: 350M
-      kubeReserved:
-        cpu: 100m
-        memory: 50M
-      enforceNodeAllocatable:
-      - pods
-
-- name: Bump cluster config to new API version
-  become: yes
-  shell: kubeadm config migrate --old-config /etc/kubernetes/kubeadm-config.yaml --new-config /etc/kubernetes/kubeadm-config-new.yaml
-
 - name: Initialize the cluster
   become: yes
-  shell: kubeadm init --config /etc/kubernetes/kubeadm-config-new.yaml >> cluster_initialized.log
+  shell: kubeadm init --apiserver-advertise-address={{ master_node_ip }} --pod-network-cidr={{ pod_cidr }}  >> cluster_initialized.log
   args:
     chdir: /home/{{ kube_bootstrap_user }}
     creates: cluster_initialized.log
@@ -63,10 +27,63 @@
     remote_src: yes
     owner: "{{ kube_bootstrap_user }}"
 
-- name: Install Pod Network
+#- name: Install Pod Network
+#  become: yes
+#  become_user: "{{ kube_bootstrap_user }}"
+#  shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml >> pod_network_setup.log
+#  args:
+#    chdir: $HOME
+#    creates: pod_network_setup.log
+
+- name: Check if kubectl is available
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
-  shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml >> pod_network_setup.log
-  args:
-    chdir: $HOME
-    creates: pod_network_setup.log
+  command: kubectl version --client
+  register: kubectl_check
+  ignore_errors: yes
+ 
+- name: Download Calico manifest
+  get_url:
+    url: "https://docs.projectcalico.org/manifests/calico.yaml"
+    dest: /tmp/calico.yaml
+    mode: '0644'
+
+- name: Apply Calico manifest
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  command: kubectl apply -f /tmp/calico.yaml
+  when: kubectl_check.rc == 0
+
+- name: Wait for Calico pods to become available
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  command: kubectl rollout status daemonset/calico-node -n kube-system
+  register: calico_rollout
+  until: calico_rollout.rc == 0
+  retries: 10
+  delay: 15
+
+- name: Verify Calico installation
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  command: kubectl get pods -n kube-system -l k8s-app=calico-node
+  register: calico_pods
+  until: "'Running' in calico_pods.stdout"
+  retries: 10
+  delay: 10
+
+- name: Debug Calico pods output
+  debug:
+    msg: "{{ calico_pods.stdout_lines }}"
+
+- name: Download K9S .deb file
+  become: yes
+  get_url:
+    url: "https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_arm64.deb"
+    dest: /tmp/k9s_linux_arm64.deb
+    mode: '0644'
+
+- name: Install the K9S .deb package
+  become: yes
+  apt:
+    deb: /tmp/k9s_linux_arm64.deb
