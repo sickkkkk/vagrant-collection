@@ -1,0 +1,99 @@
+- name: Fetch the latest Cilium CLI version
+  uri:
+    url: "https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt"
+    return_content: yes
+  register: cilium_version
+
+- name: Set Cilium CLI version variable
+  set_fact:
+    CILIUM_CLI_VERSION: "{{ cilium_version.content | trim }}"
+
+- name: Determine system architecture
+  set_fact:
+    CLI_ARCH: "{{ 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}"
+
+- name: Debug the Cilium CLI version and architecture
+  debug:
+    msg: "Cilium CLI Version: {{ CILIUM_CLI_VERSION }}, Architecture: {{ CLI_ARCH }}"
+
+- name: Download Cilium CLI and SHA256 checksum
+  get_url:
+    url: "https://github.com/cilium/cilium-cli/releases/download/{{ CILIUM_CLI_VERSION }}/cilium-linux-{{ CLI_ARCH }}.tar.gz"
+    dest: "/tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz"
+    mode: '0644'
+
+- name: Download Cilium CLI checksum file
+  get_url:
+    url: "https://github.com/cilium/cilium-cli/releases/download/{{ CILIUM_CLI_VERSION }}/cilium-linux-{{ CLI_ARCH }}.tar.gz.sha256sum"
+    dest: "/tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz.sha256sum"
+    mode: '0644'
+
+- name: Verify Cilium CLI checksum
+  command:
+    cmd: "sha256sum --check /tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz.sha256sum"
+  args:
+    chdir: "/tmp"
+  register: checksum_result
+  failed_when: "checksum_result.rc != 0"
+
+- name: Extract Cilium CLI binary to /usr/local/bin
+  unarchive:
+    src: "/tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz"
+    dest: "/usr/local/bin"
+    remote_src: yes
+
+- name: Clean up downloaded Cilium CLI files
+  file:
+    path: "/tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz"
+    state: absent
+
+- name: Clean up Cilium checksum file
+  file:
+    path: "/tmp/cilium-linux-{{ CLI_ARCH }}.tar.gz.sha256sum"
+    state: absent
+
+- name: Create cilium.yml configuration file
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  copy:
+    dest: "/tmp/cilium.yml"
+    content: |
+      cluster:
+        name: default
+        id: 0
+      version: {{ CILIUM_CLI_VERSION }}
+      operator:
+        prometheus:
+          enabled: false
+        dashboards:
+          enabled: false
+
+- name: Wait for Kubernetes cluster to become ready
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "kubectl get nodes"
+  register: kubectl_status
+  retries: 10
+  delay: 30
+  until: kubectl_status.rc == 0
+  changed_when: false
+
+- name: Debug kubectl output
+  debug:
+    var: kubectl_status.stdout
+
+- name: Fail if communication with the cluster fails
+  fail:
+    msg: "Failed to communicate with the Kubernetes cluster."
+  when: kubectl_status.rc != 0
+
+- name: Install Cilium using the configuration file
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "cilium install -f /tmp/cilium.yml"
+  when: kubectl_status.rc == 0
+
+- name: Patch Cilium cf in cluster
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: kubectl patch configmap cilium-config -n kube-system --type='merge' -p '{"data":{"ipam":"kubernetes"}}'

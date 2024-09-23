@@ -1,10 +1,5 @@
 ---
-- name: Prepare nodeas and bootstrap cluster
-  hosts: all
-  become: yes
-  roles:
-    - role: k8sprem
-
+# join nodes to kubeadm vanilla cluster
 - name: Generate join command
   hosts: master_nodes
   become: yes
