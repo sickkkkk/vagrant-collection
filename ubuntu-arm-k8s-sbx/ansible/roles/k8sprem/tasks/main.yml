@@ -1,9 +1,0 @@
----
-# tasks file for k8sprem
-- include_tasks: k8s_nodes_baseline.yml
-
-- include_tasks: setup_rke2_server.yml
-  when: "'master_nodes' in group_names"
-
-- include_tasks: setup_cilium.yml
-  when: "'master_nodes' in group_names"

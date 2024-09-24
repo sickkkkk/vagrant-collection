@@ -1,6 +1,0 @@
----
-- name: Prepare nodes and bootstrap cluster
-  hosts: all
-  become: yes
-  roles:
-    - role: k8sprem

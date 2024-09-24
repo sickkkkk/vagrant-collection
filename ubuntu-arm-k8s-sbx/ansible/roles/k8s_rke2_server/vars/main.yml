@@ -1,5 +1,5 @@
 ---
-# vars file for k8sprem
+# vars file for k8s_rke2_server
 kube_bootstrap_user: vagrant
 cluster_pod_cidr: "10.10.0.0/16"
 cluster_service_cidr: "10.11.0.0/16"

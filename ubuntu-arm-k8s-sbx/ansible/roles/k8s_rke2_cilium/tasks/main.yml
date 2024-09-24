@@ -1,3 +1,5 @@
+---
+# tasks file for k8s_rke2_cilium
 - name: Fetch the latest Cilium CLI version
   uri:
     url: "https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt"
@@ -67,11 +69,24 @@
           enabled: false
         dashboards:
           enabled: false
+- name: Check which user is running this task
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  command: whoami
+  register: whoami_result
 
-- name: Wait for Kubernetes cluster to become ready
+- name: Show whoami output
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  debug:
+    msg: "This task is running as user: {{ whoami_result.stdout }}"
+
+- name: Check if kubectl can access cluster
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
   shell: "kubectl get nodes"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   register: kubectl_status
   retries: 10
   delay: 30
@@ -91,9 +106,32 @@
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
   shell: "cilium install -f /tmp/cilium.yml"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   when: kubectl_status.rc == 0
 
 - name: Patch Cilium cf in cluster
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
   shell: kubectl patch configmap cilium-config -n kube-system --type='merge' -p '{"data":{"ipam":"kubernetes"}}'
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+
+- name: Check if all pods are in Running or Complete state
+  shell: "kubectl get pods --all-namespaces -o jsonpath='{.items[*].status.phase}'"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  register: pod_status
+  retries: 10 
+  delay: 30
+  until: "'Pending' not in pod_status.stdout and 'CrashLoopBackOff' not in pod_status.stdout and 'Failed' not in pod_status.stdout and 'Unknown' not in pod_status.stdout"
+  changed_when: false
+
+- name: Debug the pod statuses
+  debug:
+    var: pod_status.stdout
+
+- name: Confirm all pods are in Running or Complete state
+  fail:
+    msg: "Not all pods are in Running or Complete state."
+  when: "'Running' not in pod_status.stdout and 'Completed' not in pod_status.stdout"

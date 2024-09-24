@@ -1,4 +1,6 @@
 ---
+# tasks file for k8s_rke2_server
+---
 - name: Create empty dir for RKE2 config
   command: mkdir -p /etc/rancher/rke2
 
