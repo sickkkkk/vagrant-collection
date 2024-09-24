@@ -1,0 +1,93 @@
+---
+# tasks file for k8s_rke2_server
+---
+- name: Create empty dir for RKE2 config
+  command: mkdir -p /etc/rancher/rke2
+
+- name: Create RKE2 empty config
+  file:
+    path: /etc/rancher/rke2/config.yaml
+    state: touch
+    mode: '0644'
+
+- name: Populate RKE2 config
+  blockinfile:
+    path: /etc/rancher/rke2/config.yaml
+    block: |
+      token: "{{ shared_bootstrap_token }}"
+      advertise-address: "{{ master_node_ip }}"
+      node-name: "{{ master_node_fqdn }}"
+      etcd-snapshot-schedule-cron: "0 */5 * * *"
+      etcd-snapshot-retention: "10"
+      cluster-cidr: "{{ cluster_pod_cidr }}"
+      service-cidr: "{{ cluster_service_cidr }}"
+      cluster-dns: "{{ cluster_dns_ip }}"
+      node-ip: "{{ master_node_ip }}"
+      tls-san:
+        - "{{ master_node_fqdn }}"
+        - "{{ master_node_ip }}"
+        - "{{ master_node_dns }}"
+      #node-taint:
+      #  - "CriticalAddonsOnly=true:NoExecute"
+      kubelet-arg:
+        - seccomp-default=true
+        - pod-max-pids=2048
+      cni: none
+      disable-kube-proxy: true
+      disable:
+        - rke2-canal
+        - rke2-kube-proxy
+      protect-kernel-defaults: true
+
+- name: Download RKE2 install script
+  get_url:
+    url: https://get.rke2.io
+    dest: /tmp/install-rke2
+    mode: '0755'
+
+- name: Bootstrap RKE2 Server
+  shell: /tmp/install-rke2
+  environment: 
+    INSTALL_RKE2_TYPE: "server"
+  args:
+    executable: /bin/bash
+
+- name: Start RKE2 server
+  systemd:
+    name: rke2-server
+    enabled: true
+    state: started
+
+- name: Symlink RKE2 tooling
+  shell: ln -s $(find /var/lib/rancher/rke2/data/ -name kubectl) /usr/local/bin/kubectl
+  args:
+    creates: /usr/local/bin/kubectl
+
+- name: Setup KUBECONFIG and update PATH in bashrc
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  lineinfile:
+    path: /home/{{ kube_bootstrap_user }}/.bashrc
+    line: "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/usr/local/bin:/var/lib/rancher/rke2/bin"
+    create: yes
+    state: present
+
+- name: Ensure kube_bootstrap_user can read the kubeconfig
+  become: yes
+  file:
+    path: /etc/rancher/rke2/rke2.yaml
+    owner: "{{ kube_bootstrap_user }}"
+    group: "{{ kube_bootstrap_user }}"
+    mode: "0644"
+
+- name: Download K9S .deb file
+  become: yes
+  get_url:
+    url: "https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_arm64.deb"
+    dest: /tmp/k9s_linux_arm64.deb
+    mode: '0644'
+
+- name: Install the K9S .deb package
+  become: yes
+  apt:
+    deb: /tmp/k9s_linux_arm64.deb
