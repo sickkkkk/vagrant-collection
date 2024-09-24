@@ -63,7 +63,7 @@
       cluster:
         name: default
         id: 0
-      version: {{ CILIUM_CLI_VERSION }}
+      version: {{ cilium_version }}
       operator:
         prometheus:
           enabled: false

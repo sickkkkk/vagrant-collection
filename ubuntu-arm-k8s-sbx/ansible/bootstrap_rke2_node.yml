@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap RKE2 Server
-  hosts: master_nodes
+  hosts: worker_nodes
   become: yes
   roles:
-    - role: k8s_rke2_server
+    - role: k8s_rke2_nodes

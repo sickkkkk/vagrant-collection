@@ -1,0 +1,5 @@
+# variables for all roles
+kube_bootstrap_user: vagrant
+master_node_ip: "172.18.50.55"
+rke2_version: "v1.28.13+rke2r1"
+cilium_version: "1.16.1"

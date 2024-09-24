@@ -1,10 +1,7 @@
 ---
 # vars file for k8s_rke2_server
-kube_bootstrap_user: vagrant
 cluster_pod_cidr: "10.10.0.0/16"
 cluster_service_cidr: "10.11.0.0/16"
 cluster_dns_ip: "10.11.0.10"
-master_node_ip: "172.18.50.55"
 master_node_fqdn: "kmaster.cluster.local"
 master_node_dns: "kmaster"
-shared_bootstrap_token: "C3OW56EkvPOS1kCbwjo28PDuk8cUhqz0BeO6jz5TYKhZX5vL" #only for playground - need to utilise Vault instead

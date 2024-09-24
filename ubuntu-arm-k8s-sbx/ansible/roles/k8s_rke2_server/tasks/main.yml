@@ -1,6 +1,5 @@
 ---
 # tasks file for k8s_rke2_server
----
 - name: Create empty dir for RKE2 config
   command: mkdir -p /etc/rancher/rke2
 
@@ -14,7 +13,6 @@
   blockinfile:
     path: /etc/rancher/rke2/config.yaml
     block: |
-      token: "{{ shared_bootstrap_token }}"
       advertise-address: "{{ master_node_ip }}"
       node-name: "{{ master_node_fqdn }}"
       etcd-snapshot-schedule-cron: "0 */5 * * *"
@@ -49,6 +47,7 @@
   shell: /tmp/install-rke2
   environment: 
     INSTALL_RKE2_TYPE: "server"
+    INSTALL_RKE2_CHANNEL: "{{ rke2_version }}"
   args:
     executable: /bin/bash
 

@@ -102,5 +102,13 @@
    - overlay
    - br_netfilter
 
-- name: Reboot
+- name: Reboot nodes
   reboot:
+    reboot_timeout: 300
+
+- name: Ping nodes
+  command: ping -c 4 "{{ inventory_hostname }}"
+  register: ping_result
+  until: ping_result.rc == 0
+  retries: 5
+  delay: 10
