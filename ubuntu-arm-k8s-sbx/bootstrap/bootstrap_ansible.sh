@@ -19,3 +19,4 @@ sudo -u vagrant curl https://bootstrap.pypa.io/get-pip.py -o /home/vagrant/get-p
 sudo -u vagrant python3 get-pip.py --user
 sudo -u vagrant python3 -m pip install --user ansible
 echo 'export PATH="$PATH:/home/vagrant/.local/bin"' >> /home/vagrant/.bashrc
+sudo -u vagrant bash -l -c "/vagrant/scripts/ssh-add-inventory.sh"

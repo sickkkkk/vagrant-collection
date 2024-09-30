@@ -1,0 +1,46 @@
+---
+# tasks file for k8s_rke2_cluster_addons
+- name: Apply cert-manager CRDs
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.crds.yaml"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_cert_manager == "true"
+
+- name: Apply cert-manager manifests
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.yaml"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_cert_manager == "true"
+
+- name: Add rancher helm repo
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "helm repo add rancher-{{ rancher_install_channel }} https://releases.rancher.com/server-charts/{{ rancher_install_channel }}"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_rancher == "true"
+
+### TBD - add wait time for cert manager webhooks to init
+
+- name: Add rancher namespace to cluster
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "kubectl create namespace cattle-system"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_rancher == "true"
+
+- name: Install rancher helm chart
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "helm install rancher rancher-{{ rancher_install_channel }}/rancher \
+  --namespace cattle-system \
+  --set hostname=rancher.cluster.local \
+  --set replicas=1"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_rancher == "true"

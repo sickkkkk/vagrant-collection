@@ -1,6 +1,0 @@
----
-- name: Bootstrap Cilium across master nodes
-  hosts: master_nodes
-  become: yes
-  roles:
-    - role: k8s_rke2_cilium

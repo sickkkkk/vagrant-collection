@@ -1,41 +1,25 @@
 BOX_IMAGE = "bento/ubuntu-22.04-arm64"
-MASTER_BOOTSTRAP_SCRIPT = "bootstrap/bootstrap_master.sh"
-WORKER_BOOTSTRAP_SCRIPT = "bootstrap/bootstrap_worker.sh"
-ANSIBLE_MASTER_BOOTSTRAP_SCRIPT = "bootstrap/bootstrap_ansible.sh"
+NODE_BOOTSTRAP_SCRIPT = "bootstrap/bootstrap_node.sh"
 
 Vagrant.configure("2") do |config|
   config.vm.box = BOX_IMAGE
 
-  config.vm.define "kmaster" do |kmaster|
-    #kmaster.vm.synced_folder ".", "/vagrant", disabled: true
-    kmaster.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
-    kmaster.vm.hostname = "kmaster.cluster.local"
-    kmaster.vm.network "private_network", ip: "172.18.50.55"
-    kmaster.vm.network "forwarded_port", guest: 80, host: 8080
-    kmaster.vm.provision "shell", path: MASTER_BOOTSTRAP_SCRIPT
-    kmaster.vm.provider "vmware_fusion" do |v|
-      v.memory = 4096
-      v.cpus = 4
-    end
-  end
-
-  config.vm.define "ansible-master" do |ansible_master|
-    #ansible_master.vm.synced_folder ".", "/vagrant", disabled: true
-    ansible_master.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
-    ansible_master.vm.hostname = "ansible-master.cluster.local"
-    ansible_master.vm.network "private_network", ip: "172.18.50.50" 
-    ansible_master.vm.provision "shell", path: ANSIBLE_MASTER_BOOTSTRAP_SCRIPT
-    ansible_master.vm.provider "vmware_fusion" do |v|
-      v.memory = 2048
-      v.cpus = 2
+  (1..2).each do |i|
+    config.vm.define "kmaster#{i}" do |kmaster|
+      kmaster.vm.hostname = "kmaster#{i}.cluster.local"
+      kmaster.vm.network "private_network", ip: "172.18.50.7#{i}"
+      kmaster.vm.provision "shell", path: NODE_BOOTSTRAP_SCRIPT
+      kmaster.vm.provider "vmware_fusion" do |v|
+        v.memory = 4096
+        v.cpus = 4
+      end
     end
   end
 
   config.vm.define "kworker" do |worker|
-    worker.vm.synced_folder "vagrant-key/", "/home/vagrant/vagrant-key"
     worker.vm.hostname = "kworker.cluster.local"
-    worker.vm.network "private_network", ip: "172.18.50.61"#, auto_config: false
-    worker.vm.provision "shell", path: WORKER_BOOTSTRAP_SCRIPT
+    worker.vm.network "private_network", ip: "172.18.50.61"
+    worker.vm.provision "shell", path: NODE_BOOTSTRAP_SCRIPT
     worker.vm.provider "vmware_fusion" do |v|
       v.memory = 4096
       v.cpus = 4

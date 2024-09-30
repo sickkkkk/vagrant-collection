@@ -1,2 +1,4 @@
 ---
 # defaults file for k8s_rke2_nodes
+node_role: "agent" # server in case this is another master node
+node_token: ""

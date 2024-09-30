@@ -14,10 +14,6 @@
   set_fact:
     CLI_ARCH: "{{ 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}"
 
-- name: Debug the Cilium CLI version and architecture
-  debug:
-    msg: "Cilium CLI Version: {{ CILIUM_CLI_VERSION }}, Architecture: {{ CLI_ARCH }}"
-
 - name: Download Cilium CLI and SHA256 checksum
   get_url:
     url: "https://github.com/cilium/cilium-cli/releases/download/{{ CILIUM_CLI_VERSION }}/cilium-linux-{{ CLI_ARCH }}.tar.gz"

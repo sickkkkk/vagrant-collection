@@ -1,0 +1,8 @@
+---
+# defaults file for k8s_rke2_cluster_addons
+# each addon should have a control variable and version for version tracking and config management
+install_cert_manager: "true"
+cert_manager_version: "v1.15.3"
+
+install_rancher: "true"
+rancher_install_channel: "stable"

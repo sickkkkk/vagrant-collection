@@ -9,30 +9,31 @@
     state: touch
     mode: '0644'
 
-- name: Fetch node token from master node
-  fetch:
-    src: /var/lib/rancher/rke2/server/node-token
-    dest: /tmp/node_token
-    flat: yes
-  delegate_to: kmaster.cluster.local
-
-- name: Copy node token from control node to worker nodes
-  copy:
-    src: /tmp/node_token
-    dest: /tmp/node_token
-
-- name: Get node token on the worker node
-  command: cat /tmp/node_token
-  register: node_token
-  run_once: true
-
-- name: Populate RKE2 config
+- name: Populate RKE2 config {{ ansible_host }}
   blockinfile:
     path: /etc/rancher/rke2/config.yaml
     block: |
-      server: https://{{ master_node_ip }}:9345
-      token: "{{ node_token.stdout }}"
+      server: https://{{ rke2_master_node_ip }}:9345
+      token: "{{ node_token }}"
       node_name: {{ ansible_hostname }}
+  when: node_role == "agent"
+
+- name: Populate RKE2 config {{ ansible_host }}
+  blockinfile:
+    path: /etc/rancher/rke2/config.yaml
+    block: |
+      server: https://{{ rke2_master_node_ip }}:9345
+      token: "{{ node_token }}"
+      node_name: {{ ansible_hostname }}
+      cluster-cidr: "{{ cluster_pod_cidr }}"
+      service-cidr: "{{ cluster_service_cidr }}"
+      cluster-dns: "{{ cluster_dns_ip }}"
+      disable-kube-proxy: true
+      disable:
+        - rke2-canal
+        - rke2-kube-proxy
+      protect-kernel-defaults: true
+  when: node_role == "server"
 
 - name: Download RKE2 install script
   get_url:
@@ -40,7 +41,7 @@
     dest: /tmp/install-rke2
     mode: '0755'
 
-- name: Bootstrap RKE2 Server
+- name: Bootstrap RKE2 node
   shell: /tmp/install-rke2
   environment: 
     INSTALL_RKE2_TYPE: "{{ node_role }}"

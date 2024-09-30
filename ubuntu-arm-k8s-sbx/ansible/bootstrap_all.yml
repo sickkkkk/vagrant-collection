@@ -5,20 +5,56 @@
   roles:
     - role: k8s_baseline
 
-- name: Bootstrap RKE2 Server
-  hosts: master_nodes
+- name: Bootstrap RKE2 Master Server
+  hosts: kmaster1
   become: yes
   roles:
-    - role: k8s_rke2_server 
+    - role: k8s_rke2_server
 
 - name: Bootstrap Cilium across master nodes
-  hosts: master_nodes
+  hosts: kmaster1
   become: yes
   roles:
     - role: k8s_rke2_cilium
 
-- name: Bootstrap RKE2 node
+- name: Fetch Node Token
+  hosts: kmaster1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Get node token
+      command: cat /var/lib/rancher/rke2/server/node-token
+      register: node_token_content
+
+    - name: Set master_node_token fact
+      set_fact:
+        master_node_token: "{{ node_token_content.stdout }}"
+
+- name: Bootstrap RKE2 worker nodes
   hosts: worker_nodes
   become: yes
   roles:
     - role: k8s_rke2_nodes
+  vars:
+    node_role: "agent"
+    node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
+
+- name: Bootstrap RKE2 master nodes
+  hosts: master_nodes, !kmaster1
+  become: yes
+  roles:
+    - role: k8s_rke2_nodes
+  vars: 
+    node_role: server
+    node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
+
+
+- name: Label worker nodes on the master node
+  hosts: kmaster1
+  gather_facts: no
+  tasks:
+    - name: Label worker nodes
+      shell: kubectl label node {{ item }} node-role.kubernetes.io/worker=
+      environment:
+        KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+      loop: "{{ groups['worker_nodes'] }}"

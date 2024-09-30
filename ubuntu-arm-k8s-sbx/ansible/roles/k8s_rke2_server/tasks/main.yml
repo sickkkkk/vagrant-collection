@@ -13,17 +13,17 @@
   blockinfile:
     path: /etc/rancher/rke2/config.yaml
     block: |
-      advertise-address: "{{ master_node_ip }}"
+      advertise-address: "{{ rke2_master_node_ip }}"
       node-name: "{{ master_node_fqdn }}"
       etcd-snapshot-schedule-cron: "0 */5 * * *"
       etcd-snapshot-retention: "10"
       cluster-cidr: "{{ cluster_pod_cidr }}"
       service-cidr: "{{ cluster_service_cidr }}"
       cluster-dns: "{{ cluster_dns_ip }}"
-      node-ip: "{{ master_node_ip }}"
+      node-ip: "{{ rke2_master_node_ip }}"
       tls-san:
         - "{{ master_node_fqdn }}"
-        - "{{ master_node_ip }}"
+        - "{{ rke2_master_node_ip }}"
         - "{{ master_node_dns }}"
       #node-taint:
       #  - "CriticalAddonsOnly=true:NoExecute"
