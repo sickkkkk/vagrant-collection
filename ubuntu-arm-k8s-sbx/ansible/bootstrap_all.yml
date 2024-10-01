@@ -54,10 +54,23 @@
   gather_facts: no
   tasks:
     - name: Label each worker node with its hostname
-      command: >
-        kubectl label node {{ hostvars[item].hostname }} node-role.kubernetes.io/worker={{ hostvars[item].hostname }} --overwrite
+      shell: "kubectl label node {{ hostvars[item].hostname }} node-role.kubernetes.io/worker={{ hostvars[item].hostname }} --overwrite"
       environment:
         KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
       loop: "{{ groups['worker_nodes'] }}"
       loop_control:
         loop_var: item
+
+- name: Bootstrap cluster addons
+  hosts: kmaster1
+  become: yes
+  roles:
+    - role: k8s_rke2_cluster_addons
+  vars:
+    install_cert_manager: "true"
+    cert_manager_version: "v1.15.3"
+    install_rancher: "true"
+    rancher_install_channel: "stable"
+    rancher_hostname: "rancher.cluster.local"
+    install_k9s: "true"
+    k9s_version: "v0.32.5"

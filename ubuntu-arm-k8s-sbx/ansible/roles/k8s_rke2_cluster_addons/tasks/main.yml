@@ -9,30 +9,54 @@
       }}
 
 - name: Apply cert-manager CRDs
-  become: yes
-  become_user: "{{ kube_bootstrap_user }}"
   shell: "kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.crds.yaml"
   environment:
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   when: install_cert_manager == "true"
+  register: apply_crds
+  retries: 5
+  delay: 10
+  until: apply_crds is succeeded
 
 - name: Apply cert-manager manifests
-  become: yes
-  become_user: "{{ kube_bootstrap_user }}"
   shell: "kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_version }}/cert-manager.yaml"
   environment:
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   when: install_cert_manager == "true"
+  register: apply_manifests
+  retries: 5
+  delay: 10
+  until: apply_manifests is succeeded
 
-- name: Add rancher helm repo
-  become: yes
-  become_user: "{{ kube_bootstrap_user }}"
-  shell: "helm repo add rancher-{{ rancher_install_channel }} https://releases.rancher.com/server-charts/{{ rancher_install_channel }}"
+- name: Wait for cert-manager deployment to be ready
+  shell: "kubectl rollout status deployment/cert-manager -n cert-manager --timeout=300s"
   environment:
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
-  when: install_rancher == "true"
+  when: install_cert_manager == "true"
+  register: rollout_status
+  retries: 10
+  delay: 15
+  until: "'successfully rolled out' in rollout_status.stdout"
 
-### TBD - add wait time for cert manager webhooks to init
+- name: Wait for cert-manager-webhook deployment to be ready
+  shell: "kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=300s"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_cert_manager == "true"
+  register: webhook_rollout
+  retries: 10
+  delay: 15
+  until: "'successfully rolled out' in webhook_rollout.stdout"
+
+- name: Ensure cert-manager-webhook service has endpoints
+  shell: "kubectl get endpoints cert-manager-webhook -n cert-manager -o jsonpath='{.subsets[*].addresses[*].ip}'"
+  environment:
+    KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+  when: install_cert_manager == "true"
+  register: webhook_endpoints
+  retries: 10
+  delay: 15
+  until: webhook_endpoints.stdout != ""
 
 - name: Add rancher namespace to cluster
   become: yes
@@ -42,12 +66,19 @@
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   when: install_rancher == "true"
 
+- name: Add Rancher Helm repo
+  become: yes
+  become_user: "{{ kube_bootstrap_user }}"
+  shell: "helm repo add rancher-{{ rancher_install_channel }} https://releases.rancher.com/server-charts/{{ rancher_install_channel }}"
+  when: install_rancher == "true"
+  register: add_result
+
 - name: Install rancher helm chart
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
   shell: "helm install rancher rancher-{{ rancher_install_channel }}/rancher \
   --namespace cattle-system \
-  --set hostname=rancher.cluster.local \
+  --set hostname={{ rancher_hostname }} \
   --set replicas=1"
   environment:
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
