@@ -13,6 +13,17 @@
      - nfs-common
      - samba
 
+- name: Ensure hostname is consistent
+  hostname:
+    name: "{{ hostname }}"
+
+- name: Add hostname and IP to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_host }} {{ hostname }} {{ inventory_hostname }}"
+    state: present
+    create: yes
+
 - name: Download Helm install script
   get_url:
     url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3

@@ -48,13 +48,16 @@
     node_role: server
     node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
 
-
-- name: Label worker nodes on the master node
+- name: Label Worker Nodes with Hostname
   hosts: kmaster1
+  become: yes
   gather_facts: no
   tasks:
-    - name: Label worker nodes
-      shell: kubectl label node {{ item }} node-role.kubernetes.io/worker=
+    - name: Label each worker node with its hostname
+      command: >
+        kubectl label node {{ hostvars[item].hostname }} node-role.kubernetes.io/worker={{ hostvars[item].hostname }} --overwrite
       environment:
         KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
       loop: "{{ groups['worker_nodes'] }}"
+      loop_control:
+        loop_var: item

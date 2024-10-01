@@ -15,7 +15,8 @@
     block: |
       server: https://{{ rke2_master_node_ip }}:9345
       token: "{{ node_token }}"
-      node_name: {{ ansible_hostname }}
+      node_name: {{ inventory_hostname }}
+      node-ip: "{{ ansible_host }}"
   when: node_role == "agent"
 
 - name: Populate RKE2 config {{ ansible_host }}
@@ -24,7 +25,8 @@
     block: |
       server: https://{{ rke2_master_node_ip }}:9345
       token: "{{ node_token }}"
-      node_name: {{ ansible_hostname }}
+      node_name: {{ inventory_hostname }}
+      node-ip: "{{ ansible_host }}"
       cluster-cidr: "{{ cluster_pod_cidr }}"
       service-cidr: "{{ cluster_service_cidr }}"
       cluster-dns: "{{ cluster_dns_ip }}"

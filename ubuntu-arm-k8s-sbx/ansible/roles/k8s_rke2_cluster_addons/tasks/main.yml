@@ -1,5 +1,13 @@
 ---
 # tasks file for k8s_rke2_cluster_addons
+- name: Determine system architecture
+  set_fact:
+    SYSTEM_ARCH: >-
+      {{
+        'arm64' if ansible_architecture == 'aarch64' else
+        ('amd64' if ansible_architecture == 'x86_64' else ansible_architecture)
+      }}
+
 - name: Apply cert-manager CRDs
   become: yes
   become_user: "{{ kube_bootstrap_user }}"
@@ -44,3 +52,17 @@
   environment:
     KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
   when: install_rancher == "true"
+
+- name: Download K9S .deb file
+  become: yes
+  get_url:
+    url: "https://github.com/derailed/k9s/releases/download/{{ k9s_version }}/k9s_linux_{{ SYSTEM_ARCH }}.deb"
+    dest: /tmp/k9s_linux_{{ SYSTEM_ARCH }}.deb
+    mode: '0644'
+  when: install_k9s == "true"
+
+- name: Install the K9S .deb package
+  become: yes
+  apt:
+    deb: /tmp/k9s_linux_{{ SYSTEM_ARCH }}.deb
+  when: install_k9s == "true"

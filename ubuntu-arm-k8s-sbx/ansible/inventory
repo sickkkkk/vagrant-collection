@@ -1,5 +1,0 @@
-[master_nodes]
-kmaster1 ansible_host=kmaster1.cluster.local ansible_user=vagrant ansible_ssh_private_key_file=../vagrant-key/vagrant-bootstrap-key
-kmaster2 ansible_host=kmaster2.cluster.local ansible_user=vagrant ansible_ssh_private_key_file=../vagrant-key/vagrant-bootstrap-key
-[worker_nodes]
-kworker ansible_host=kworker.cluster.local ansible_user=vagrant ansible_ssh_private_key_file=../vagrant-key/vagrant-bootstrap-key

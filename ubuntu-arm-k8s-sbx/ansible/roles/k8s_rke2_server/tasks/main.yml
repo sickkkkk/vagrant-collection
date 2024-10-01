@@ -13,18 +13,18 @@
   blockinfile:
     path: /etc/rancher/rke2/config.yaml
     block: |
-      advertise-address: "{{ rke2_master_node_ip }}"
-      node-name: "{{ master_node_fqdn }}"
+      advertise-address: "{{ ansible_host }}"
+      node-name: "{{ hostname }}"
       etcd-snapshot-schedule-cron: "0 */5 * * *"
       etcd-snapshot-retention: "10"
       cluster-cidr: "{{ cluster_pod_cidr }}"
       service-cidr: "{{ cluster_service_cidr }}"
       cluster-dns: "{{ cluster_dns_ip }}"
-      node-ip: "{{ rke2_master_node_ip }}"
+      node-ip: "{{ ansible_host }}"
       tls-san:
-        - "{{ master_node_fqdn }}"
-        - "{{ rke2_master_node_ip }}"
-        - "{{ master_node_dns }}"
+        - "{{ inventory_hostname }}"
+        - "{{ ansible_host }}"
+        - "{{ hostname }}"
       #node-taint:
       #  - "CriticalAddonsOnly=true:NoExecute"
       kubelet-arg:
@@ -78,15 +78,3 @@
     owner: "{{ kube_bootstrap_user }}"
     group: "{{ kube_bootstrap_user }}"
     mode: "0644"
-
-- name: Download K9S .deb file
-  become: yes
-  get_url:
-    url: "https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_arm64.deb"
-    dest: /tmp/k9s_linux_arm64.deb
-    mode: '0644'
-
-- name: Install the K9S .deb package
-  become: yes
-  apt:
-    deb: /tmp/k9s_linux_arm64.deb

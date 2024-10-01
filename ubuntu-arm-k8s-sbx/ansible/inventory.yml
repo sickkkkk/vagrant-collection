@@ -1,0 +1,21 @@
+all:
+  children:
+    master_nodes:
+      hosts:
+        kmaster1:
+          ansible_host: "172.18.50.71"
+          ansible_user: vagrant
+          ansible_ssh_private_key_file: ../vagrant-key/vagrant-bootstrap-key
+          hostname: kmaster1.cluster.local
+        kmaster2:
+          ansible_host: "172.18.50.72"
+          ansible_user: vagrant
+          ansible_ssh_private_key_file: ../vagrant-key/vagrant-bootstrap-key
+          hostname: kmaster2.cluster.local
+    worker_nodes:
+      hosts:
+        kworker:
+          ansible_host: "172.18.50.61"
+          ansible_user: vagrant
+          ansible_ssh_private_key_file: ../vagrant-key/vagrant-bootstrap-key
+          hostname: kworker.cluster.local
