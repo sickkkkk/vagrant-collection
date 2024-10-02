@@ -1,46 +1,31 @@
 #!/bin/bash
-set -x
-
-systemctl disable --now ufw
-
-cat >>/etc/hosts<<EOF
-172.18.50.151   pg1.int.ohmylab.io     pg1
-172.18.50.152   pg2.int.ohmylab.io     pg2
-172.18.50.55    etcd.int.ohmylab.io    etcd
-172.18.50.60    haproxy.int.ohmylab.io  haproxy
-EOF
-LOCAL_IP=$(ip addr show | grep -oP 'inet \K172\.[\d.]+')
-echo 
-#ETCD_IP=$(nslookup etcd | awk '/^Address: / { print $2 }' | tail -n1)
-ETCD_IP="172.18.50.55"
+LOCAL_IP=$(ip addr show | grep -oP 'inet \K10\.[\d.]+')
+ETCD_IP="10.17.9.72"
+echo "Local ip is: $LOCAL_IP. ETCD is at: $ETCD_IP"
 SHORT_HOSTNAME=$(nslookup $LOCAL_IP | awk '/name =/ { print $4 }' | head -n1 | awk -F. '{print $1}')
-# add pgpro repo
-#wget -q -O /tmp/repo-add.sh https://repo.postgrespro.ru/1c-15/keys/pgpro-repo-add.sh
-#chmod +x /tmp/repo-add.sh
-#bash -c "/tmp/repo-add.sh"
-apt install curl ca-certificates
-install -d /usr/share/postgresql-common/pgdg
-curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
-sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+echo "Hostname is: $SHORT_HOSTNAME"
+NET_CIDR="10.17.0.0/16"
+
+wget -q -O /tmp/repo-add.sh https://repo.postgrespro.ru/1c-15/keys/pgpro-repo-add.sh
+chmod +x /tmp/repo-add.sh
+bash -c "/tmp/repo-add.sh"
 apt-get update -y
 # install pg1c
-apt-get install postgresql-15 bzip2 tar build-essential \
+apt-get install postgrespro-1c-15 bzip2 tar build-essential \
     dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev -y
 systemctl daemon-reload
-systemctl start postgresql
-systemctl stop postgresql
-systemctl status postgresql
-systemctl disable postgresql
-echo -e "admin\nadmin" | passwd root 
-echo "export TERM=xterm" >> /etc/bash.bashrc
+systemctl start postgrespro-1c-15
+systemctl stop postgrespro-1c-15
+systemctl status postgrespro-1c-15
+systemctl disable postgrespro-1c-15
 
 #set ru_RU locale:
 locale-gen ru_RU
 locale-gen ru_RU.UTF-8
 update-locale
-
+# update pip; install patroni
 pip3 install --upgrade pip
-pip install patroni[psycopg3,etcd3]==3.2.2
+pip install patroni[psycopg3,etcd3]
 
 mkdir -p /data/patroni
 chown postgres:postgres -R /data
@@ -87,9 +72,9 @@ bootstrap:
     - locale: ru_RU.utf8
   pg_hba:
     - host replication replicator   127.0.0.1/32 md5
-    - host replication replicator   172.18.50.0/24   md5
-    - host replication replicator   172.18.50.0/24   md5
-    - host all all   0.0.0.0/0   md5
+    - host replication replicator   $NET_CIDR   md5
+    - host replication replicator   $NET_CIDR   md5
+    - host all all   $NET_CIDR   md5
   users:
     admin:
        password: admin
@@ -117,5 +102,5 @@ tags:
    clonefrom: false
    nosync: false
 EOF
-echo 
+echo
 systemctl daemon-reload && systemctl start patroni

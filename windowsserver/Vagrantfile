@@ -4,19 +4,24 @@
 Vagrant.configure(2) do |config|
 
   # win test box
-  config.vm.define "winsrv" do |srv|
+  config.vm.define "ue5builder" do |srv|
   
     srv.vm.box               = "gusztavvargadr/windows-server-2022-standard"
     srv.vm.box_check_update  = false
     srv.vm.box_version       = "2102.0.2310"
-    srv.vm.hostname          = "winsrv"
+    srv.vm.hostname          = "ue5builder"
 
-    srv.vm.network "private_network", virtualbox__intnet: "intnet", auto_config: false
+    srv.vm.network "private_network", ip: "172.20.120.5"
 
     srv.vm.provider :virtualbox do |v|
-      v.name    = "winsrv"
-      v.memory  = 8192
-      v.cpus    =  4
+      v.name    = "ue5builder"
+      v.memory  = 16384
+      v.cpus    = 16
+      file_to_disk = 'second_disk.vdi'
+      unless File.exist?(file_to_disk)
+        v.customize ['createhd', '--filename', file_to_disk, '--size', 200 * 1024] # 200 GB disk
+      end
+      v.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
     end
     
   end
