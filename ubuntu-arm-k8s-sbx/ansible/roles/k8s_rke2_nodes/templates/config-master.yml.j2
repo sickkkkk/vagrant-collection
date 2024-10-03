@@ -1,0 +1,31 @@
+server: https://{{ rke2_balancer_ip }}:9345
+token: "{{ node_token }}"
+node-name: "{{ hostname }}"
+etcd-snapshot-schedule-cron: "0 */5 * * *"
+etcd-snapshot-retention: "10"
+cluster-cidr: "{{ cluster_pod_cidr }}"
+service-cidr: "{{ cluster_service_cidr }}"
+cluster-dns: "{{ cluster_dns_ip }}"
+node-ip: "{{ ansible_host }}"
+tls-san:
+{% for master in groups['master_nodes'] %}
+  - "{{ hostvars[master].inventory_hostname }}"
+  - "{{ hostvars[master].ansible_host }}"
+  - "{{ hostvars[master].hostname }}"
+{% endfor %}
+{% for balancer in groups['balancer'] %}
+  - "{{ hostvars[balancer].inventory_hostname }}"
+  - "{{ hostvars[balancer].ansible_host }}"
+  - "{{ hostvars[balancer].hostname }}"
+{% endfor %}
+#node-taint:
+#  - "CriticalAddonsOnly=true:NoExecute"
+kubelet-arg:
+  - seccomp-default=true
+  - pod-max-pids=2048
+cni: none
+disable-kube-proxy: true
+disable:
+  - rke2-canal
+  - rke2-kube-proxy
+protect-kernel-defaults: true

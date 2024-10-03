@@ -25,4 +25,15 @@ Vagrant.configure("2") do |config|
       v.cpus = 4
     end
   end
+
+  config.vm.define "haproxy" do |haproxy|
+    haproxy.vm.synced_folder '.', '/vagrant', disabled: true
+    haproxy.vm.hostname = "haproxy.cluster.local"
+    haproxy.vm.network "private_network", ip: "172.18.50.100"
+    haproxy.vm.provision "shell", path: NODE_BOOTSTRAP_SCRIPT
+    haproxy.vm.provider "vmware_fusion" do |v|
+      v.memory = 2048
+      v.cpus = 2
+    end
+  end
 end

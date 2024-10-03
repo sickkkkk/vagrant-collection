@@ -1,0 +1,63 @@
+---
+# tasks file for k8s_ha_balancer
+- name: Update APT cache
+  apt:
+    update_cache: yes
+
+- name: Install packages
+  apt: 
+    name:
+     - policycoreutils
+     - selinux-utils
+     - selinux-basics
+     - haproxy
+
+- name: Ensure hostname is consistent
+  hostname:
+    name: "{{ hostname }}"
+
+- name: Add hostname and IP to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_host }} {{ hostname }} {{ inventory_hostname }}"
+    state: present
+    create: yes
+
+- name: Disable ufw and apparmor
+  systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop:
+   - ufw
+   - apparmor
+
+- name: Disable SWAP
+  command: swapoff -a
+
+- name: Patch SWAP in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+- name: Ensure HAProxy config directory exists
+  file:
+    path: /etc/haproxy
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Deploy HAProxy config from template
+  become: yes
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: '0644'
+
+- name: Restart haproxy
+  service:
+    name: haproxy
+    state: restarted
+
+

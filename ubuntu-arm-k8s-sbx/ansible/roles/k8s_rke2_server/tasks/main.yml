@@ -9,33 +9,12 @@
     state: touch
     mode: '0644'
 
-- name: Populate RKE2 config
-  blockinfile:
-    path: /etc/rancher/rke2/config.yaml
-    block: |
-      advertise-address: "{{ ansible_host }}"
-      node-name: "{{ hostname }}"
-      etcd-snapshot-schedule-cron: "0 */5 * * *"
-      etcd-snapshot-retention: "10"
-      cluster-cidr: "{{ cluster_pod_cidr }}"
-      service-cidr: "{{ cluster_service_cidr }}"
-      cluster-dns: "{{ cluster_dns_ip }}"
-      node-ip: "{{ ansible_host }}"
-      tls-san:
-        - "{{ inventory_hostname }}"
-        - "{{ ansible_host }}"
-        - "{{ hostname }}"
-      #node-taint:
-      #  - "CriticalAddonsOnly=true:NoExecute"
-      kubelet-arg:
-        - seccomp-default=true
-        - pod-max-pids=2048
-      cni: none
-      disable-kube-proxy: true
-      disable:
-        - rke2-canal
-        - rke2-kube-proxy
-      protect-kernel-defaults: true
+- name: Populate RKE2 config from template
+  template:
+    src: config.yml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    mode: '0644'
+  become: yes
 
 - name: Download RKE2 install script
   get_url:

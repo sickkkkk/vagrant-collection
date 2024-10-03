@@ -1,0 +1,30 @@
+global
+  stats socket /var/run/haproxy.sock mode 660 level admin
+
+frontend k8s-control-plane
+  bind {{ hostvars['haproxy'].ansible_host }}:6443
+  mode tcp
+  option tcplog
+  default_backend k8s-control-plane
+
+frontend rke2-api
+  bind {{ hostvars['haproxy'].ansible_host }}:9345
+  mode tcp
+  option tcplog
+  default_backend rke2-api
+
+backend k8s-control-plane
+  mode tcp
+  balance roundrobin
+  option ssl-hello-chk
+{% for host in groups['master_nodes'] %}
+  server kmaster{{ loop.index }} {{ hostvars[host].ansible_host }}:6443 check
+{% endfor %}
+
+backend rke2-api
+  mode tcp
+  balance roundrobin
+  option ssl-hello-chk
+{% for host in groups['master_nodes'] %}
+  server kmaster{{ loop.index }} {{ hostvars[host].ansible_host }}:9345 check
+{% endfor %}

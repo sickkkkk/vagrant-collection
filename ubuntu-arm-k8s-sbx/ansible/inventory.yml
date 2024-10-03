@@ -19,3 +19,10 @@ all:
           ansible_user: vagrant
           ansible_ssh_private_key_file: ../vagrant-key/vagrant-bootstrap-key
           hostname: kworker.cluster.local
+    balancer:
+      hosts:
+        haproxy:
+          ansible_host: "172.18.50.100"
+          ansible_user: vagrant
+          ansible_ssh_private_key_file: ../vagrant-key/vagrant-bootstrap-key
+          hostname: haproxy.cluster.local

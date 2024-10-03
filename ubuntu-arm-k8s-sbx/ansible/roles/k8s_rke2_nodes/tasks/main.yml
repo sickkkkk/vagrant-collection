@@ -9,32 +9,22 @@
     state: touch
     mode: '0644'
 
-- name: Populate RKE2 config {{ ansible_host }}
+- name: Populate RKE2 Node config {{ ansible_host }}
   blockinfile:
     path: /etc/rancher/rke2/config.yaml
     block: |
-      server: https://{{ rke2_master_node_ip }}:9345
+      server: https://{{ rke2_balancer_ip }}:9345
       token: "{{ node_token }}"
       node_name: {{ inventory_hostname }}
       node-ip: "{{ ansible_host }}"
   when: node_role == "agent"
 
-- name: Populate RKE2 config {{ ansible_host }}
-  blockinfile:
-    path: /etc/rancher/rke2/config.yaml
-    block: |
-      server: https://{{ rke2_master_node_ip }}:9345
-      token: "{{ node_token }}"
-      node_name: {{ inventory_hostname }}
-      node-ip: "{{ ansible_host }}"
-      cluster-cidr: "{{ cluster_pod_cidr }}"
-      service-cidr: "{{ cluster_service_cidr }}"
-      cluster-dns: "{{ cluster_dns_ip }}"
-      disable-kube-proxy: true
-      disable:
-        - rke2-canal
-        - rke2-kube-proxy
-      protect-kernel-defaults: true
+- name: Populate RKE2 Master Node config from template
+  template:
+    src: config-master.yml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    mode: '0644'
+  become: yes
   when: node_role == "server"
 
 - name: Download RKE2 install script

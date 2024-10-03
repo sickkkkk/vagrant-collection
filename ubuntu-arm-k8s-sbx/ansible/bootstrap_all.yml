@@ -1,15 +1,23 @@
 ---
 - name: Prepare nodes for k8s setup
-  hosts: all
+  hosts: all,!balancer
   become: yes
   roles:
     - role: k8s_baseline
+
+- name: Bootstrap control plane balancer
+  hosts: balancer
+  become: yes
+  roles:
+    - role: k8s_ha_balancer
 
 - name: Bootstrap RKE2 Master Server
   hosts: kmaster1
   become: yes
   roles:
     - role: k8s_rke2_server
+  vars:
+    rke2_balancer_ip: "172.18.50.100"
 
 - name: Bootstrap Cilium across master nodes
   hosts: kmaster1
@@ -30,15 +38,6 @@
       set_fact:
         master_node_token: "{{ node_token_content.stdout }}"
 
-- name: Bootstrap RKE2 worker nodes
-  hosts: worker_nodes
-  become: yes
-  roles:
-    - role: k8s_rke2_nodes
-  vars:
-    node_role: "agent"
-    node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
-
 - name: Bootstrap RKE2 master nodes
   hosts: master_nodes, !kmaster1
   become: yes
@@ -47,6 +46,17 @@
   vars: 
     node_role: server
     node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
+    rke2_balancer_ip: "172.18.50.100"
+
+- name: Bootstrap RKE2 worker nodes
+  hosts: worker_nodes
+  become: yes
+  roles:
+    - role: k8s_rke2_nodes
+  vars:
+    node_role: "agent"
+    node_token: "{{ hostvars['kmaster1']['master_node_token'] }}"
+    rke2_balancer_ip: "172.18.50.100"
 
 - name: Label Worker Nodes with Hostname
   hosts: kmaster1
@@ -74,3 +84,17 @@
     rancher_hostname: "rancher.cluster.local"
     install_k9s: "true"
     k9s_version: "v0.32.5"
+
+- name: Label Master Nodes with CriticalAddons taint
+  hosts: kmaster1
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Label each worker node with its hostname
+      shell: "kubectl taint nodes {{ hostvars[item].hostname }} CriticalAddonsOnly=true:NoExecute --overwrite"
+      environment:
+        KUBECONFIG: "/etc/rancher/rke2/rke2.yaml"
+      loop: "{{ groups['master_nodes'] }}"
+      loop_control:
+        loop_var: item
+
