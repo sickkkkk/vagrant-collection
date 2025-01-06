@@ -36,6 +36,8 @@ initial-cluster: "etcd0=http://$LOCAL_IP:2380"
 advertise-client-urls: "http://$LOCAL_IP:2379"
 initial-cluster-token: "pg1"
 initial-cluster-state: "new"
+log-level: "debug"
+log-outputs: "file:/var/log/etcd/etcd.log"
 EOF
 
 cat >>/etc/systemd/system/etcd.service<<EOF
@@ -47,6 +49,7 @@ After=network.target
 [Service]
 Type=notify
 ExecStart=/usr/local/bin/etcd --config-file /etc/default/etcd.conf.yml
+Environment="ETCD_UNSUPPORTED_ARCH=arm64"
 Restart=always
 RestartSec=10s
 LimitNOFILE=40000

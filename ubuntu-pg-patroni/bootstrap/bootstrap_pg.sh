@@ -9,7 +9,7 @@ cat >>/etc/hosts<<EOF
 172.18.50.60    haproxy.int.ohmylab.io  haproxy
 EOF
 LOCAL_IP=$(ip addr show | grep -oP 'inet \K172\.18\.50\.\d+')
-echo 
+echo $LOCAL_IP
 ETCD_IP="172.18.50.55"
 SHORT_HOSTNAME=$(nslookup $LOCAL_IP | awk '/name =/ { print $4 }' | head -n1 | awk -F. '{print $1}')
 echo "Hostname is $HOSTNAME"
