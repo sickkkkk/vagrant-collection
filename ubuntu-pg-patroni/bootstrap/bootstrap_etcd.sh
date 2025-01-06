@@ -22,6 +22,7 @@ echo "export TERM=xterm" >> /etc/bash.bashrc
 cat >>/etc/hosts<<EOF
 172.18.50.151   pg1.int.ohmylab.io     pg1
 172.18.50.152   pg2.int.ohmylab.io     pg2
+172.18.50.153   pg3.int.ohmylab.io     pg3
 172.18.50.55    etcd.int.ohmylab.io    etcd
 172.18.50.60    haproxy.int.ohmylab.io  haproxy
 EOF
