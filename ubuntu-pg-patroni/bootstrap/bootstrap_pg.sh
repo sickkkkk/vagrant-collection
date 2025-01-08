@@ -1,5 +1,7 @@
 #!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
 PG_MAJOR_VERSION="15"
+USERPASSWORD="B1qaz2wsx3edc"
 systemctl disable --now ufw
 # local hosts file
 cat >>/etc/hosts<<EOF
@@ -8,6 +10,7 @@ cat >>/etc/hosts<<EOF
 172.18.50.153   pg3.int.ohmylab.io     pg3
 172.18.50.55    etcd.int.ohmylab.io    etcd
 172.18.50.60    haproxy.int.ohmylab.io  haproxy
+172.18.50.160    backupsrv.int.ohmylab.io  backupsrv
 EOF
 LOCAL_IP=$(ip addr show | grep -oP 'inet \K172\.18\.50\.\d+')
 echo $LOCAL_IP
@@ -21,7 +24,7 @@ sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org
 apt-get update -y
 # install pg
 apt-get install postgresql-$PG_MAJOR_VERSION bzip2 tar build-essential \
-    dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev -y
+    dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev pgbackrest -y
 systemctl daemon-reload
 systemctl start postgresql
 systemctl stop postgresql
@@ -61,7 +64,7 @@ EOF
 
 echo "Bootstrapping patroni config for $SHORT_HOSTNAME with $LOCAL_IP. etcd is at: $ETCD_IP"
 cat >>/etc/patroni.yml<<EOF
-scope: postgres
+scope: postgres_sandbox
 namespace: /db/
 name: $SHORT_HOSTNAME
 restapi:
@@ -101,13 +104,16 @@ postgresql:
    data_dir: /data/patroni
    pgpass: /tmp/pgpass
    password_encryption: md5
+   parameters:
+    archive_command: pgbackrest --stanza=postgres_sandbox archive-push "%p"
+    archive_mode: "on"
    authentication:
     replication:
       username: replicator
       password: "qwer1234StrongPassword"
     superuser:
       username: postgres
-      password: "B1qaz2wsx3edc"
+      password: "${USERPASSWORD}"
       parameters:
       unix_socket_directories: '.'
 tags:
@@ -116,5 +122,36 @@ tags:
    clonefrom: false
    nosync: false
 EOF
-echo 
+# pgbackrest setup - local repo
+mkdir -p /backup/pgbackrestrepo && \
+chmod 750 /backup/pgbackrestrepo && \
+chown postgres:postgres /backup/pgbackrestrepo
+# pgbackrest - log dirs
+mkdir -p -m 770 /var/log/pgbackrest && \
+chown postgres:postgres /var/log/pgbackrest
+# temp dirs permissions
+mkdir -p /tmp/pgbackrest
+chown -R postgres:postgres /var/log/pgbackrest && \
+chown -R postgres:postgres /tmp/pgbackrest && \
+chmod 750 /var/log/pgbackrest && \
+chmod 700 /tmp/pgbackrest
+# pgbackrest - starter config
+echo "" > /etc/pgbackrest.conf
+cat >>/etc/pgbackrest.conf<<EOF
+[global]
+repo1-host=172.18.50.160
+repo1-host-user=postgres
+log-level-file=warn
+log-path=/var/log/pgbackrest
+# 'process-max=1' or similar might be used if needed.
+
+[postgres_sandbox]
+$SHORT_HOSTNAME-database=postgres
+$SHORT_HOSTNAME-path=/data/patroni
+$SHORT_HOSTNAME-port=5432
+EOF
+# update postgres user password in system
+echo "postgres:${USERPASSWORD}" | chpasswd
+echo "Password updated for postgres user."
+
 systemctl daemon-reload && systemctl start patroni

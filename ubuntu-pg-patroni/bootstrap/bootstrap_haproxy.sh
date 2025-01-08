@@ -1,5 +1,6 @@
+#!/bin/bash
 set -x
-
+export DEBIAN_FRONTEND=noninteractive
 systemctl disable --now ufw 
 apt-get update -y
 apt -y install haproxy
@@ -14,6 +15,7 @@ cat >>/etc/hosts<<EOF
 172.18.50.153   pg3.int.ohmylab.io     pg3
 172.18.50.55    etcd.int.ohmylab.io    etcd
 172.18.50.60    haproxy.int.ohmylab.io  haproxy
+172.18.50.160    backupsrv.int.ohmylab.io  backupsrv
 EOF
 
 cat >>/etc/haproxy/haproxy.cfg<<EOF
