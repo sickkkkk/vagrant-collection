@@ -1,6 +1,8 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
-USERPASSWORD="B1qaz2wsx3edc"
+export USERPASSWORD=""
+export AWS_ACCESS_KEY_ID=""
+export AWS_ACCESS_KEY=""
 systemctl disable --now ufw
 # local hosts file
 cat >>/etc/hosts<<EOF
@@ -19,7 +21,12 @@ locale-gen ru_RU
 locale-gen ru_RU.UTF-8
 update-locale
 # packages
+apt install curl ca-certificates -y
+install -d /usr/share/postgresql-common/pgdg
+curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 apt-get update -y
+# install pg
 apt-get install bzip2 tar build-essential \
     dkms linux-headers-$(uname -r) python3-pip python3-dev libpq-dev pgbackrest -y
 # pgbackrest setup - local repo
@@ -42,6 +49,15 @@ cat >>/etc/pgbackrest.conf<<EOF
 repo1-path=/backup/pgbackrestrepo
 repo1-retention-full=14
 repo1-retention-full-type=time
+repo2-type=s3
+repo2-path=/pgbackrestrepo
+repo2-s3-bucket=pgbackrest-rpwsdkeq6rbmpwlo
+repo2-s3-region=eu-central-1
+repo2-s3-endpoint=s3.eu-central-1.amazonaws.com
+repo2-s3-verify-tls=y
+repo2-s3-key=${AWS_ACCESS_KEY_ID}
+repo2-s3-key-secret=${AWS_ACCESS_KEY}
+repo2-retention-full=14
 archive-check=n
 process-max=1
 log-level-console=info

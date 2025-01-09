@@ -1,6 +1,6 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
-PG_MAJOR_VERSION="15"
+PG_MAJOR_VERSION="16"
 USERPASSWORD="B1qaz2wsx3edc"
 systemctl disable --now ufw
 # local hosts file
@@ -116,6 +116,15 @@ postgresql:
       password: "${USERPASSWORD}"
       parameters:
       unix_socket_directories: '.'
+   create_replica_methods:
+      - pgbackrest
+      - basebackup
+   pgbackrest:
+      command: pgbackrest --stanza=postgres_sandbox restore --type=none
+      keep_data: True
+      no_params: True
+   basebackup:
+      checkpoint: 'fast'
 tags:
    nofailover: false
    noloadbalance: false
@@ -146,9 +155,9 @@ log-path=/var/log/pgbackrest
 # 'process-max=1' or similar might be used if needed.
 
 [postgres_sandbox]
-$SHORT_HOSTNAME-database=postgres
-$SHORT_HOSTNAME-path=/data/patroni
-$SHORT_HOSTNAME-port=5432
+pg1-database=postgres
+pg1-path=/data/patroni
+pg1-port=5432
 EOF
 # update postgres user password in system
 echo "postgres:${USERPASSWORD}" | chpasswd

@@ -36,11 +36,14 @@ listen stats
       stats uri /
 listen postgres
       bind *:5432
-      option httpchk
+      mode tcp
+      option httpchk GET /health
       http-check expect status 200
       default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
       server pg1 172.18.50.151:5432 maxconn 100   check   port 8008
       server pg2 172.18.50.152:5432 maxconn 100   check   port 8008
+      server pg3 172.18.50.153:5432 maxconn 100   check   port 8008
+      log global
 EOF
 
 systemctl restart haproxy
