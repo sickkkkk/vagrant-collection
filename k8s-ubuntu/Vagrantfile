@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
   
     node.vm.box               = "generic/ubuntu2204"
     node.vm.box_check_update  = false
-    node.vm.box_version       = "4.2.16"
+    node.vm.box_version       = "4.3.16"
     node.vm.hostname          = "kmaster.int.ohmylab.io"
 
     node.vm.network "private_network", ip: "172.16.55.50"
@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
 
     node.vm.box               = "generic/ubuntu2204"
     node.vm.box_check_update  = false
-    node.vm.box_version       = "4.2.16"
+    node.vm.box_version       = "4.3.16"
     node.vm.hostname          = "kworker0#{i}.int.ohmylab.io"
 
     node.vm.network "private_network", ip: "172.16.55.6#{i}"
